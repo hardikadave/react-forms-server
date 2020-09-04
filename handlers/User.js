@@ -25,11 +25,13 @@ exports.register = async (req, res) => {
   }
 
   if (Object.keys(errors).length > 0) {
-    res.json({ error: errors });
+    return res.status(400).json({ error: errors });
   } else {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      res.json({ error: { email: "Email already in use!" } });
+      return res
+        .status(400)
+        .json({ error: { email: "Email already in use!" } });
     }
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -41,7 +43,7 @@ exports.register = async (req, res) => {
 
     const result = await newUser.save();
 
-    res.json(result);
+    return res.status(200).json(result);
   }
 };
 
@@ -63,18 +65,20 @@ exports.login = async (req, res) => {
   }
 
   if (Object.keys(errors).length > 0) {
-    res.status(400).json({ error: errors });
+    return res.status(400).json({ error: errors });
   } else {
     let existingUser;
     try {
       existingUser = await User.findOne({ email }); //finding the document in the users collection based on email
     } catch (err) {
       console.log(err);
-      res.status(500).json({ email: "Email does not exist" });
+      return res.status(500).json({ error: { email: "Email does not exist" } });
     }
     const passwordMatch = await bcrypt.compare(password, existingUser.password);
     if (!passwordMatch) {
-      res.status(403).json({ password: "Password does not match" });
+      return res
+        .status(403)
+        .json({ error: { password: "Password does not match" } });
     }
     const token = jwt.sign(
       {
@@ -85,6 +89,6 @@ exports.login = async (req, res) => {
       SECRET_KEY,
       { expiresIn: "1h" }
     );
-    res.status(200).json({ email, token });
+    return res.status(200).json({ email, token });
   }
 };
