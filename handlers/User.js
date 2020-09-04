@@ -67,19 +67,20 @@ exports.login = async (req, res) => {
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ error: errors });
   } else {
-    let existingUser;
-    try {
-      existingUser = await User.findOne({ email }); //finding the document in the users collection based on email
-    } catch (err) {
-      console.log(err);
-      return res.status(500).json({ error: { email: "Email does not exist" } });
+    const existingUser = await User.findOne({ email }); //finding the document in the users collection based on email
+    if (!existingUser) {
+      //catch (err) {
+      // console.log(err);
+      return res.status(400).json({ error: { email: "Email does not exist" } });
     }
+
     const passwordMatch = await bcrypt.compare(password, existingUser.password);
     if (!passwordMatch) {
       return res
         .status(403)
         .json({ error: { password: "Password does not match" } });
     }
+
     const token = jwt.sign(
       {
         userId: existingUser._id,
